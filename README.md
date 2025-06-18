@@ -4,6 +4,7 @@ A simple plugin for Obsidian to embed a daily, editable snippet into your notes.
 
 Gemini has done all of the work. I had the need (or want?) for this, described what I wanted and got it perfectly. Then, requested some nice-to-have improvements.
 
+![snipper-styles-screenshot](https://github.com/user-attachments/assets/6284b2cc-1455-420e-b36a-274dacc2501c)
 
 ---
 
