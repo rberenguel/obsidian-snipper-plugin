@@ -5,6 +5,7 @@ import {
 	PluginSettingTab,
 	Setting,
 	MarkdownPostProcessorContext,
+	MarkdownRenderer,
 	TFile,
 	TAbstractFile,
 } from "obsidian";
@@ -12,9 +13,9 @@ import * as path from "path";
 
 const AVAILABLE_STYLES: Record<string, string> = {
 	"": "None (Default)",
-	"floating-card": "Floating Card (floating-card)",
-	"gradient-glow": "Gradient Glow (gradient-glow)",
-	"quote-icon": "Quote with Icon (quote-icon)",
+	"card": "Floating Card (card)",
+	"glow": "Gradient Glow (glow)",
+	"quote-icon": "Quote with Icon (quote)",
 	glass: "Glassmorphism (glass)",
 };
 
@@ -63,189 +64,160 @@ export default class SnippetPlugin extends Plugin {
 
 		this.addSettingTab(new SnippetSettingTab(this.app, this));
 	}
+ async createSnippetView(source: string, targetEl: HTMLElement, ctx: MarkdownPostProcessorContext) {
+        const styleToApply = source.trim().split('\n')[0] || this.settings.defaultStyle;
+        const snippetFilePath = this.getSnippetPath(ctx);
 
-	private async handleFileRename(
-		file: TAbstractFile,
-		oldPath: string,
-	): Promise<void> {
-		// 1. Ensure it's a Markdown file and not a folder
-		if (!(file instanceof TFile) || file.extension !== "md") {
-			return;
-		}
+        await this.ensureSnippetFileExists(snippetFilePath);
 
-		const oldBaseName = path.parse(oldPath).name;
+        const renderViewMode = async () => {
+            targetEl.empty();
+            targetEl.addClass('snippet-view-mode');
+            const content = await this.app.vault.adapter.read(snippetFilePath);
+            
+            if(content) {
+                await MarkdownRenderer.render(this.app, content, targetEl, snippetFilePath, this);
+            } else {
+                targetEl.setText('Empty snippet. Click to edit.');
+            }
+            
+            targetEl.onClickEvent(() => {
+                renderEditMode(content);
+            });
+        };
 
-		// 2. Ensure we are not renaming a snippet file itself to avoid loops
-		if (oldBaseName.startsWith("s-")) {
-			return;
-		}
+        const renderEditMode = (currentContent: string) => {
+            targetEl.empty();
+            targetEl.removeClass('snippet-view-mode');
+            
+            const textarea = document.createElement('textarea');
+            const charCount = document.createElement('span');
+            let debounceTimer: NodeJS.Timeout;
+            const charLimit = this.settings.characterLimit;
 
-		const newBaseName = file.basename;
+            const saveAndSwitchView = async () => {
+                clearTimeout(debounceTimer); // ensure last change is saved
+                await this.app.vault.adapter.write(snippetFilePath, textarea.value);
+                renderViewMode();
+            };
+            
+            const updateCharCount = (text: string) => {
+                const remaining = charLimit - text.length;
+                charCount.textContent = `${remaining}`;
+                charCount.style.color = remaining < 0 ? 'var(--text-error)' : 'var(--text-muted)';
+            };
 
-		const oldSnippetPath = `${this.settings.snippetFolderPath}/s-${oldBaseName}.md`;
-		const newSnippetPath = `${this.settings.snippetFolderPath}/s-${newBaseName}.md`;
+            textarea.value = currentContent;
+            updateCharCount(currentContent);
+            
+            textarea.oninput = () => {
+                updateCharCount(textarea.value);
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    this.app.vault.adapter.write(snippetFilePath, textarea.value);
+                }, 500);
+            };
 
-		// 3. Check if the corresponding snippet file exists before trying to rename it
-		const snippetFileToRename =
-			this.app.vault.getAbstractFileByPath(oldSnippetPath);
-		if (!snippetFileToRename) {
-			return;
-		}
+            textarea.onblur = saveAndSwitchView; // Save and switch back when user clicks away
+            
+            targetEl.appendChild(textarea);
+            targetEl.appendChild(charCount);
+            
+            setTimeout(() => textarea.focus(), 0);
+        };
+        
+        targetEl.addClass('snippet-widget');
+        if (styleToApply) {
+            targetEl.addClass(styleToApply);
+        }
+        await renderViewMode();
+    }
+    
+    // ... (Helper functions and settings tab are unchanged) ...
+    private getSnippetPath(ctx: MarkdownPostProcessorContext): string {
+        const currentFileName = ctx.sourcePath.split('/').pop()?.split('.').shift() || '';
+        return `${this.settings.snippetFolderPath}/s-${currentFileName}.md`;
+    }
 
-		// 4. Perform the rename
-		try {
-			await this.app.vault.rename(snippetFileToRename, newSnippetPath);
-		} catch (err) {
-			console.error(
-				`Snipper: Failed to rename snippet file for ${newBaseName}.`,
-				err,
-			);
-		}
-	}
+    private async ensureSnippetFileExists(path: string): Promise<void> {
+        if (!await this.app.vault.adapter.exists(path)) {
+            try {
+                await this.app.vault.createFolder(this.settings.snippetFolderPath);
+            } catch (e) { /* Folder likely exists, ignore error */ }
+            await this.app.vault.create(path, "");
+        }
+    }
+    
+    private async handleFileRename(file: TAbstractFile, oldPath: string): Promise<void> {
+        if (!(file instanceof TFile) || file.extension !== 'md') return;
+        const oldBaseName = path.parse(oldPath).name;
+        if (oldBaseName.startsWith('s-')) return;
+        const newBaseName = file.basename;
+        const oldSnippetPath = `${this.settings.snippetFolderPath}/s-${oldBaseName}.md`;
+        const newSnippetPath = `${this.settings.snippetFolderPath}/s-${newBaseName}.md`;
+        const snippetFileToRename = this.app.vault.getAbstractFileByPath(oldSnippetPath);
+        if (!snippetFileToRename) return;
+        try {
+            await this.app.vault.rename(snippetFileToRename, newSnippetPath);
+        } catch (err) {
+            console.error(`Snipper: Failed to rename snippet file for ${newBaseName}.`, err);
+        }
+    }
 
-	async createSnippetView(
-		source: string,
-		targetEl: HTMLElement,
-		ctx: MarkdownPostProcessorContext,
-	) {
-		let styleToApply =
-			source.trim().split("\n")[0] || this.settings.defaultStyle;
-		const currentFilePath = ctx.sourcePath;
-		const currentFileName =
-			currentFilePath.split("/").pop()?.split(".").shift() || "";
-		const snippetFileName = `s-${currentFileName}.md`;
-		const snippetFilePath = `${this.settings.snippetFolderPath}/${snippetFileName}`;
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
 
-		const snippetFile =
-			this.app.vault.getAbstractFileByPath(snippetFilePath);
-		if (!snippetFile) {
-			try {
-				await this.app.vault.createFolder(
-					this.settings.snippetFolderPath,
-				);
-			} catch (e) {
-				/* Folder likely exists, ignore error */
-			}
-			await this.app.vault.create(snippetFilePath, "");
-		}
-
-		targetEl.empty();
-		targetEl.addClass("snippet-widget");
-		if (styleToApply) {
-			targetEl.addClass(styleToApply);
-		}
-
-		const textarea = document.createElement("textarea");
-		const charCount = document.createElement("span");
-		let debounceTimer: NodeJS.Timeout;
-		const charLimit = this.settings.characterLimit;
-
-		const updateCharCount = (text: string) => {
-			const remaining = charLimit - text.length;
-			charCount.textContent = `${remaining}`;
-			charCount.style.color =
-				remaining < 0 ? "var(--text-error)" : "var(--text-muted)";
-		};
-
-		const initialContent =
-			await this.app.vault.adapter.read(snippetFilePath);
-		textarea.value = initialContent;
-		updateCharCount(initialContent);
-
-		textarea.placeholder = `Your ${charLimit}-character snippet...`;
-		textarea.oninput = () => {
-			const text = textarea.value;
-			updateCharCount(text);
-			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
-				this.app.vault.adapter.write(snippetFilePath, text);
-			}, 500);
-		};
-
-		targetEl.appendChild(textarea);
-		targetEl.appendChild(charCount);
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
+    async saveSettings() {
+        await this.saveData(this.settings);
+    }
 }
 
 class SnippetSettingTab extends PluginSettingTab {
-	plugin: SnippetPlugin;
-
-	constructor(app: App, plugin: SnippetPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-		containerEl.createEl("h2", { text: "Snipper Settings" });
-
-		new Setting(containerEl)
-			.setName("Snippet folder path")
-			.setDesc(
-				"The folder where your s-YYYYMMDD.md snippet files will be stored.",
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("Example: Journal/Snippets")
-					.setValue(this.plugin.settings.snippetFolderPath)
-					.onChange(async (value) => {
-						this.plugin.settings.snippetFolderPath = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Character limit")
-			.setDesc("The maximum number of characters for the snippet.")
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.characterLimit.toString())
-					.onChange(async (value) => {
-						this.plugin.settings.characterLimit =
-							parseInt(value) || 140;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Default style")
-			.setDesc(
-				"Default style to apply if none is specified in the code block.",
-			)
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOptions(AVAILABLE_STYLES)
-					.setValue(this.plugin.settings.defaultStyle)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultStyle = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		containerEl.createEl("p", {
-			text: "To add your own styles:",
-			cls: "setting-help-text",
-		});
-		const ul = containerEl.createEl("ul", { cls: "setting-help-text" });
-		ul.createEl("li", {
-			text: "Add a new CSS class (e.g., .snippet-widget.my-cool-style) to your styles.css file.",
-		});
-		ul.createEl("li", {
-			text: "Add the new style to the AVAILABLE_STYLES list at the top of the main.ts file.",
-		});
-		ul.createEl("li", { text: "Rebuild the plugin." });
-	}
+    plugin: SnippetPlugin;
+    constructor(app: App, plugin: SnippetPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+    display(): void {
+        const { containerEl } = this;
+        containerEl.empty();
+        containerEl.createEl('h2', { text: 'Snipper Settings' });
+        new Setting(containerEl)
+            .setName('Snippet folder path')
+            .setDesc('The folder where your s-YYYYMMDD.md snippet files will be stored.')
+            .addText(text => text
+                .setPlaceholder('Example: Journal/Snippets')
+                .setValue(this.plugin.settings.snippetFolderPath)
+                .onChange(async (value) => {
+                    this.plugin.settings.snippetFolderPath = value;
+                    await this.plugin.saveSettings();
+                }));
+        new Setting(containerEl)
+            .setName('Character limit')
+            .setDesc('The maximum number of characters for the snippet.')
+            .addText(text => text
+                .setValue(this.plugin.settings.characterLimit.toString())
+                .onChange(async (value) => {
+                    this.plugin.settings.characterLimit = parseInt(value) || 140;
+                    await this.plugin.saveSettings();
+                }));
+        new Setting(containerEl)
+            .setName('Default style')
+            .setDesc('Default style to apply if none is specified in the code block.')
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOptions(AVAILABLE_STYLES)
+                    .setValue(this.plugin.settings.defaultStyle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.defaultStyle = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+        containerEl.createEl('p', { text: 'To add your own styles:', cls: 'setting-help-text' });
+        const ul = containerEl.createEl('ul', { cls: 'setting-help-text' });
+        ul.createEl('li', { text: 'Add a new CSS class (e.g., .snippet-widget.my-cool-style) to your styles.css file.' });
+        ul.createEl('li', { text: 'Add the new style to the AVAILABLE_STYLES list at the top of the main.ts file.' });
+        ul.createEl('li', { text: 'Rebuild the plugin.' });
+    }
 }
