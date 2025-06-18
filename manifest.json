@@ -3,9 +3,8 @@
 	"name": "Obsidian Snipper",
 	"version": "0.0.1",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Add a daily snippet. Or just any snippet. But just one.",
+	"author": "Ruben Berenguel",
+	"authorUrl": "https://www.mostlymaths.net",
 	"isDesktopOnly": false
 }

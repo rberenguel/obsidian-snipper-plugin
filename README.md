@@ -2,6 +2,8 @@
 
 A simple plugin for Obsidian to embed a daily, editable snippet into your notes. It helps you maintain atomic notes by storing the snippet content in a separate file, while still allowing for seamless, in-place editing.
 
+Gemini has done all of the work. I had the need (or want?) for this, described what I wanted and got it perfectly. Then, requested some nice-to-have improvements.
+
 
 ---
 
