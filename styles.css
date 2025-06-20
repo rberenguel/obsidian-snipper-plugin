@@ -61,15 +61,11 @@
 }
 
 .snippet-widget.glow textarea,
-.snippet-widget.glow span {
+.snippet-widget.glow p {
     color: white;
-   
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); 
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9)
 }
 
-.snippet-widget.glow span {
-    color: rgba(255,255,255,0.8);
-}
 
 @keyframes gradient {
     0% { background-position: 0% 50%; }
@@ -111,6 +107,7 @@
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9)
 }
 
 /*
