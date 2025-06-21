@@ -8,6 +8,12 @@ Gemini has done all of the work. I had the need (or want?) for this, described w
 
 ---
 
+## Why?
+
+I wanted some sort of one-shot journal I could come back and check later. My usual daily note is full of [dataview](https://blacksmithgu.github.io/obsidian-dataview/) queries (so far, I guess they'll become [Bases](https://help.obsidian.md/bases) soon), so finding a thread of what I did would be cumbersome. It would also be annoying to find / summarize later.
+
+The solution I settled on is having a dedicated file for the daily summary/snippet, on a separate folder. Named with an easily parsable format (`s-ORIGINAL`). The plugin itself lets you edit this file inline where you place it, so it feels like editing a section of your main document, but gets stored elsewhere. It also styles it in more funky ways, because why not! I decided to force the plugin to have a character limit, too. It should be the main headline for the day, the very short summary. Of course, you can set the character limit to 100k characters. But it defaults to 140.
+
 ## Features
 
 - **Atomic Snippets:** Stores your snippet in a separate file (e.g., `Snippets/s-20250618.md`) while letting you edit it from your main note.
