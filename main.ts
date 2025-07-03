@@ -58,6 +58,28 @@ export default class SnippetPlugin extends Plugin {
 				editor.setCursor({ line: cursor.line + 1, ch: 0 });
 			},
 		});
+		this.addCommand({
+			id: "insert-snippet-filtered-view",
+			name: "Insert Snippet Filter View",
+			editorCallback: async (editor: Editor) => {
+				// Construct the path to the template file within your plugin's folder
+				const templatePath = `${this.app.vault.configDir}/plugins/${this.manifest.id}/view-template.md`;
+				try {
+					const template =
+						await this.app.vault.adapter.read(templatePath);
+					editor.replaceSelection(template);
+				} catch (e) {
+					console.error(
+						"Snipper: Could not read view-template.md",
+						e,
+					);
+					// Let the user know the template is missing
+					editor.replaceSelection(
+						"Error: Snipper template file not found.",
+					);
+				}
+			},
+		});
 
 		this.addSettingTab(new SnippetSettingTab(this.app, this));
 	}
