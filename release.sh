@@ -12,7 +12,7 @@ then
 fi
 
 VERSION=$1
-ARCHIVE_NAME="simple-fsrs"
+ARCHIVE_NAME="snipper"
 DOWNLOADS_DIR="$HOME/Downloads"
 RELEASE_ZIP_PATH="$DOWNLOADS_DIR/$ARCHIVE_NAME.zip"
 
