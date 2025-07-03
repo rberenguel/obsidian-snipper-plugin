@@ -1,3 +1,13 @@
+:root {
+	--shadow-dark: #d1d9e6;
+	--shadow-light: #ffffff;
+}
+/* For dark mode */
+.theme-dark {
+	--shadow-dark: #2c2c2c;
+	--shadow-light: #4a4a4a;
+}
+
 .snippet-widget {
 	padding: 1.2em 1.5em;
 	border-left: 3px solid var(--text-accent);
@@ -116,33 +126,74 @@
 	text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9);
 }
 
+.snippet-widget.terminal {
+	background-color: #1a1a1a;
+	border: 1px solid #00ff41;
+	border-radius: 4px;
+	font-family: "Courier New", Courier, monospace;
+}
+
+.snippet-widget.terminal textarea {
+	color: #00ff41;
+	text-shadow: 0 0 5px #00ff41;
+}
+
 /*
-.snippet-widget.glass::after {
-  content: '';
+.snippet-widget.terminal::after {
+  content: '▋';
+  color: #00ff41;
+  animation: blink 1s step-end infinite;
   position: absolute;
-  top: 0;
-  left: -150%;
-  width: 190%;
-  height: 100%;
-  transform: skewX(-20deg);
-  background: linear-gradient(to right, 
-    rgba(255,255,255,0) 0%, 
-    rgba(255,255,255,0.02) 20%,
-    rgba(255,255,255,0.05) 35%,
-    rgba(255,255,255,0.07) 45%,
-    rgba(255,255,255,0.07) 55%,
-    rgba(255,255,255,0.05) 65%,
-    rgba(255,255,255,0.02) 80%,
-    rgba(255,255,255,0) 100%
-  );
-  animation: shine 12s infinite ease-in-out;
+  bottom: 1.2em;
+  left: 1.5em; 
 }
-@keyframes shine {
-  0% { left: -150%; }
-  50% { left: 150%; }
-  100% { left: -150%; }
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}*/
+
+.snippet-widget.notebook {
+	background-color: #fdfdfd;
+	border: none;
+	border-left: 2px solid #ff8f8f;
+	background-image: repeating-linear-gradient(
+		to bottom,
+		transparent,
+		transparent 1.4em,
+		#d4eaff 1.4em,
+		#d4eaff 1.45em
+	);
+	background-position-y: 1.1em; /* Offset to align with text */
+	box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+	font-family: "Bradley Hand", "Comic Sans MS", cursive;
+	font-size: 110%;
+	color: #333;
 }
-  */
+
+.snippet-widget.notebook textarea {
+	line-height: 1.45em; /* Match the line-height to the background lines */
+	color: #333;
+}
+
+.snippet-widget.neumorphic {
+	background-color: var(--background-primary);
+	border-radius: 10px;
+	border: none;
+	box-shadow:
+		6px 6px 12px var(--shadow-dark),
+		-6px -6px 12px var(--shadow-light);
+	transition: all 0.2s ease-in-out;
+}
+
+.snippet-widget.neumorphic:hover {
+	box-shadow:
+		4px 4px 8px var(--shadow-dark),
+		-4px -4px 8px var(--shadow-light);
+}
+
+/* ---------------------------------------- */
 
 .snippet-date {
 	position: absolute;

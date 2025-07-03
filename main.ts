@@ -15,8 +15,11 @@ const AVAILABLE_STYLES: Record<string, string> = {
 	"": "None (Default)",
 	card: "Floating Card (card)",
 	glow: "Gradient Glow (glow)",
-	"quote-icon": "Quote with Icon (quote)",
+	quote: "Quote with Icon (quote)",
 	glass: "Glassmorphism (glass)",
+	terminal: "Terminal (terminal)",
+	notebook: "Notebook Paper (notebook)",
+	neumorphic: "Neumorphic (neumorphic)",
 };
 
 interface SnippetPluginSettings {
