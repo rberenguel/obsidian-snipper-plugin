@@ -9,7 +9,6 @@ import {
 	TFile,
 	TAbstractFile,
 } from "obsidian";
-import * as path from "path";
 
 const AVAILABLE_STYLES: Record<string, string> = {
 	"": "None (Default)",
@@ -54,6 +53,7 @@ export default class SnippetPlugin extends Plugin {
 		this.addCommand({
 			id: "insert-snipper-block",
 			name: "Insert Snipper block",
+			icon: "rectangle-horizontal",
 			editorCallback: (editor: Editor) => {
 				const cursor = editor.getCursor();
 				const block = "```snipper\n\n```";
@@ -64,6 +64,7 @@ export default class SnippetPlugin extends Plugin {
 		this.addCommand({
 			id: "insert-snippet-filtered-view",
 			name: "Insert Snippet Filter View",
+			icon: "rows-3",
 			editorCallback: async (editor: Editor) => {
 				// Construct the path to the template file within your plugin's folder
 				const templatePath = `${this.app.vault.configDir}/plugins/${this.manifest.id}/view-template.md`;
@@ -205,7 +206,9 @@ export default class SnippetPlugin extends Plugin {
 		oldPath: string,
 	): Promise<void> {
 		if (!(file instanceof TFile) || file.extension !== "md") return;
-		const oldBaseName = path.parse(oldPath).name;
+		const oldBaseName = oldPath
+			.substring(oldPath.lastIndexOf("/") + 1)
+			.replace(/\.md$/, "");
 		if (oldBaseName.startsWith("s-")) return;
 		const newBaseName = file.basename;
 		const oldSnippetPath = `${this.settings.snippetFolderPath}/s-${oldBaseName}.md`;
