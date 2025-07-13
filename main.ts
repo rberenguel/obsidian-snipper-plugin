@@ -143,7 +143,8 @@ export default class SnippetPlugin extends Plugin {
 			};
 
 			const updateCharCount = (text: string) => {
-				const remaining = charLimit - text.length;
+				const cleanedText = text.replace(/[()\`\*\_]/g, "");
+				const remaining = charLimit - cleanedText.length;
 				charCount.textContent = `${remaining}`;
 				charCount.style.color =
 					remaining < 0 ? "var(--text-error)" : "var(--text-muted)";

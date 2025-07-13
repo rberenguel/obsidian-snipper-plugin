@@ -1,6 +1,6 @@
 {
 	"name": "snipper",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Add a daily snippet. Or just any snippet. But just one.",
 	"main": "main.js",
 	"scripts": {
